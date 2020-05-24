@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta content="utf-8" http-equiv="encoding">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@4.x/css/materialdesignicons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Material+Icons" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+</head>
+
+<body>
+    <div id="app">
+        <v-app id="inspire">
+            <v-app-bar app clipped-left>
+                <v-toolbar-title>The Racket Show Viewer</v-toolbar-title>
+            </v-app-bar>
+
+            <!-- <v-overlay :value="loading">
+                <v-progress-circular indeterminate size="64" color="#C51C1B"></v-progress-circular>
+            </v-overlay> -->
+
+            <v-dialog v-model="loading" hide-overlay persistent width="300">
+                <v-card color="primary" dark>
+                    <v-card-text>
+                        Please stand by
+                        <v-progress-linear indeterminate color="white" class="mb-0"></v-progress-linear>
+                    </v-card-text>
+                </v-card>
+            </v-dialog>
+
+            <v-dialog v-model="notfound" hide-overlay persistent width="300">
+                <v-card-text>
+                    Let Google help apps determine location. This means sending anonymous location data to Google, even
+                    when no apps are running.
+                </v-card-text>
+
+                <v-card-actions>
+                    <v-spacer></v-spacer>
+
+                    <v-btn color="green darken-1" text @click="dialog = false">
+                        Disagree
+                    </v-btn>
+
+                    <v-btn color="green darken-1" text @click="dialog = false">
+                        Agree
+                    </v-btn>
+                </v-card-actions>
+                </v-card>
+            </v-dialog>
+
+            <v-content>
+                <v-row>
+                    <v-col cols="11" sm="5">
+                        <v-menu v-model="menu" :close-on-content-click="false" :nudge-right="40"
+                            transition="scale-transition" offset-y min-width="290px">
+                            <template v-slot:activator="{ on }">
+                                <v-text-field v-model="date" label="Select a show date" prepend-icon="event" readonly
+                                    v-on="on"></v-text-field>
+                            </template>
+                            <v-date-picker first-day-of-week=1 v-model="date" @input="menu = false"
+                                :show-current="false" @click:date="fetchSongList">
+                            </v-date-picker>
+                        </v-menu>
+                    </v-col>
+                </v-row>
+            </v-content>
+
+            <v-data-table v-if="songs" :headers="headers" :items="songs" :items-per-page="30" class="elevation-1">
+                <template v-slot:item.search="{ item }">
+                    <a :href="item.search" target="_blank">Youtube</a>
+                </template>
+                <template v-slot:item.cover="{ item }">
+                    <v-img :src="item.cover" :alt="item.name" height="100px" width="100px"></v-img>
+                </template>
+            </v-data-table>
+
+            <v-footer app>
+                <span>&copy; 2020</span>
+            </v-footer>
+        </v-app>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/babel-polyfill/dist/polyfill.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+    <script src="https://unpkg.com/axios@0.19.2/dist/axios.js"></script>
+
+    <script>
+        new Vue({
+            el: '#app',
+            vuetify: new Vuetify(),
+            props: {
+                source: String,
+            },
+
+            data: () => ({
+                drawer: null,
+                date: new Date().toISOString().substr(0, 10),
+                menu: false,
+                modal: false,
+                headers: [
+                    {
+                        align: 'start',
+                        sortable: false,
+                        value: 'name',
+                    },
+                    { text: 'Play', value: 'search' },
+                    { text: 'Cover', value: 'cover' },
+                    { text: 'Title', value: 'title' },
+                    { text: 'Album', value: 'album' },
+                    { text: 'Artist', value: 'artist' },
+                    { text: 'Duration', value: 'duration' },
+                ],
+                songs: null,
+                loading: false,
+                notfound: false
+            }),
+
+            methods: {
+                fetchSongList: function () {
+                    this.loading = !this.loading;
+                    const url = `https://music.abcradio.net.au/api/v1/plays/search.json?station=triplej&from=${this.date}T12:00:00&to=${this.date}T15:00:00&limit=200&order=asc`;
+
+                    axios
+                        .get(url)
+                        .then((response) => {
+
+                            var songsArray = [];
+                            var items = response.data.items;
+
+                            items.forEach(element => {
+
+                                var title = element.recording.title;
+                                var artist = element.recording.artists[0].name;
+                                var albumName = element.release !== null ? element.release.title : "N/A";
+                                var songDuration = this.duration(element.recording.duration);
+                                var albumCoverUrl = element.release !== null ? element.release.artwork[0].url : "https://www.abc.net.au/assets/radio-2.52/images/icons/album.png";
+                                var ytUrl = this.generateYoutubeLink(artist, title);
+
+                                var song = {
+                                    title: title,
+                                    artist: artist,
+                                    album: albumName,
+                                    duration: songDuration,
+                                    cover: albumCoverUrl,
+                                    search: ytUrl
+                                };
+
+                                songsArray.push(song);
+                            });
+
+                            this.songs = songsArray;
+                            this.notfound = false;
+                        })
+                        .catch((error) => {
+                            if (error.response) {
+                                console.log(error.response.data);
+                                console.log(error.response.status);
+                                console.log(error.response.headers);
+
+                                if (error.response.status === 404) {
+                                    this.notfound = true;
+                                }
+                            }
+                        })
+                        .finally(() => (this.loading = !this.loading))
+                },
+                duration: function (duration) {
+                    if (!duration) return "00:00";
+                    var minutes = Math.floor(duration / 60);
+                    var seconds = duration % 60;
+
+                    minutes = (minutes < 10 ? "0" : "") + minutes;
+                    seconds = (seconds < 10 ? "0" : "") + seconds;
+
+                    return `${minutes}:${seconds}`;
+                },
+                generateYoutubeLink(artist, song) {
+                    var youtubeUrl = "https://www.youtube.com/results?search_query=";
+                    const searchParam = encodeURIComponent(`${artist} ${song}`);
+
+                    return youtubeUrl + searchParam;
+                },
+            },
+            created() {
+                this.$vuetify.theme.dark = true
+            },
+        });
+
+    </script>
+</body>
+
+</html>
