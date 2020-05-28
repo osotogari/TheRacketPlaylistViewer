@@ -24,7 +24,6 @@
                 <v-card>
                     <v-card-title class="headline">Show not found</v-card-title>
 
-
                     <v-card-actions class="justify-center">
                         <v-btn color="green darken-1" text @click="notfound = false">
                             OK
@@ -50,7 +49,7 @@
                 </v-row>
             </v-content>
 
-            <v-data-table v-if="songs" :headers="headers" :items="songs" :items-per-page="30" class="elevation-1">
+            <v-data-table v-if="songs" :headers="headers" :items="songs" :items-per-page="30" height="800" fixed-header class="elevation-1">
                 <template v-slot:item.search="{ item }">
                     <a :href="item.search" target="_blank">Youtube</a>
                 </template>
