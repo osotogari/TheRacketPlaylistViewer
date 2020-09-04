@@ -22,7 +22,7 @@
 
             <v-dialog v-model="notfound" max-width="290">
                 <v-card>
-                    <v-card-title class="headline">Show not found</v-card-title>
+                    <v-card-title class="headline">Not found</v-card-title>
 
                     <v-card-actions class="justify-center">
                         <v-btn color="green darken-1" text @click="notfound = false">
@@ -49,7 +49,8 @@
                 </v-row>
             </v-content>
 
-            <v-data-table v-if="songs" :headers="headers" :items="songs" :items-per-page="30" height="800" fixed-header class="elevation-1">
+            <v-data-table v-if="songs" :headers="headers" :items="songs" :items-per-page="30" height="800" fixed-header
+                class="elevation-1">
                 <template v-slot:item.search="{ item }">
                     <a :href="item.search" target="_blank">Youtube</a>
                 </template>
@@ -119,7 +120,7 @@
                                 var artist = element.recording.artists[0].name;
                                 var albumName = element.release !== null ? element.release.title : "N/A";
                                 var songDuration = this.duration(element.recording.duration);
-                                var albumCoverUrl = element.release !== null ? element.release.artwork[0].url : "https://www.abc.net.au/assets/radio-2.52/images/icons/album.png";
+                                var albumCoverUrl = element?.release?.artwork[0]?.url;
                                 var ytUrl = this.generateYoutubeLink(artist, title);
 
                                 var song = {
@@ -127,7 +128,7 @@
                                     artist: artist,
                                     album: albumName,
                                     duration: songDuration,
-                                    cover: albumCoverUrl,
+                                    cover: albumCoverUrl !== null ? albumCoverUrl : "https://www.abc.net.au/assets/radio-2.52/images/icons/album.png",
                                     search: ytUrl
                                 };
 
@@ -175,7 +176,7 @@
                 // on load get the most recent show date (Tuesday)
                 var date = moment();
                 var mostRecentTuesday = date.day(date.day() >= 2 ? 2 : -4);
-                
+
                 // set date
                 this.date = mostRecentTuesday.format('YYYY-MM-DD');
 
