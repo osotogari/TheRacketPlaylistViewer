@@ -60,7 +60,7 @@
             </v-data-table>
 
             <v-footer app>
-                <span>&copy; 2020</span>
+                <span>&copy; {{ year }}</span>
             </v-footer>
         </v-app>
     </div>
@@ -99,7 +99,8 @@
                 ],
                 songs: null,
                 loading: false,
-                notfound: false
+                notfound: false,
+                year: null
             }),
 
             methods: {
@@ -172,6 +173,8 @@
                 this.$vuetify.theme.dark = true
             },
             mounted() {
+
+                this.year = moment().year();
 
                 // on load get the most recent show date (Tuesday)
                 var date = moment();
